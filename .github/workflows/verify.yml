@@ -16,7 +16,11 @@ jobs:
         with: {node-version: '24', cache: npm}
       - run: npm ci && npm audit --audit-level=high
       - run: npm test && npm run build && npm run lint
-      - run: npx playwright install --with-deps chromium
+      - name: Select hosted Chrome
+        run: |
+          browser=$(command -v google-chrome)
+          "$browser" --version
+          echo "CHROMIUM_PATH=$browser" >> "$GITHUB_ENV"
       - name: Build and test isolated databases
         run: |
           sh scripts/keys.sh
