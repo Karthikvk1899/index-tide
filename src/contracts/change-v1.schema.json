@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Index Tide change envelope v1",
+  "type": "object",
+  "required": ["tenant", "version", "contract", "payload"],
+  "properties": {
+    "tenant": { "type": "string" },
+    "version": { "$ref": "#/definitions/version" },
+    "contract": { "const": 1 },
+    "payload": {
+      "type": "object",
+      "required": ["tenant", "id", "version", "title", "body", "deleted"],
+      "properties": {
+        "tenant": { "type": "string" },
+        "id": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+        "version": { "$ref": "#/definitions/version" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 180 },
+        "body": { "type": "string", "maxLength": 8192 },
+        "deleted": { "type": "boolean" }
+      }
+    }
+  },
+  "definitions": {
+    "version": { "type": "string", "pattern": "^[1-9][0-9]{0,18}$" }
+  }
+}
