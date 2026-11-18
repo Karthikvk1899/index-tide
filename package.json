@@ -1,0 +1,30 @@
+{
+  "name": "index-tide",
+  "version": "0.1.0",
+  "scripts": {
+    "test": "node --test test/unit.test.js",
+    "build": "tsc --noEmit && vite build",
+    "integration": "node --test test/integration.test.js",
+    "browser": "playwright test",
+    "lint": "eslint src"
+  },
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@fastify/static": "10.1.11",
+    "fastify": "5.12.8",
+    "pg": "8.23.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "10.15.0",
+    "eslint-plugin-security": "4.2.1",
+    "prettier": "3.10.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.8"
+  }
+}
