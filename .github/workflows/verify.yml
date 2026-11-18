@@ -1,0 +1,44 @@
+name: Verify
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  system:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with: {node-version: '24', cache: npm}
+      - run: npm ci && npm audit --audit-level=high
+      - run: npm test && npm run build && npm run lint
+      - run: npx playwright install --with-deps chromium
+      - name: Build and test isolated databases
+        run: |
+          sh scripts/keys.sh
+          docker compose --profile test run --build --rm checks
+      - name: Verify outage recovery and browser journeys
+        run: |
+          docker compose up -d --build api worker
+          set -a
+          . ./.env
+          set +a
+          node scripts/recovery.mjs
+          npm run browser
+      - if: always()
+        run: docker compose down -v
+  codeql:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066
+        with: {languages: javascript-typescript, queries: security-extended}
+      - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066
