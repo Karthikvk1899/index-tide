@@ -1,0 +1,46 @@
+x-databases: &databases
+  SOURCE_URL: postgres://tide:${SOURCE_PASSWORD:?run scripts/keys.sh}@source:5432/tide
+  INDEX_URL: postgres://tide:${INDEX_PASSWORD:?run scripts/keys.sh}@search:5432/tide
+x-db: &db
+  image: postgres:18-bookworm
+  healthcheck:
+    test: ["CMD-SHELL","pg_isready -U tide -d tide"]
+    interval: 2s
+    timeout: 3s
+    retries: 40
+services:
+  source:
+    <<: *db
+    environment: {POSTGRES_USER: tide, POSTGRES_DB: tide, POSTGRES_PASSWORD: "${SOURCE_PASSWORD}"}
+    volumes: [source-data:/var/lib/postgresql]
+  search:
+    <<: *db
+    environment: {POSTGRES_USER: tide, POSTGRES_DB: tide, POSTGRES_PASSWORD: "${INDEX_PASSWORD}"}
+    volumes: [index-data:/var/lib/postgresql]
+  setup:
+    build: .
+    environment: *databases
+    command: ["node","src/setup.js"]
+    depends_on: {source: {condition: service_healthy}, search: {condition: service_healthy}}
+  api:
+    build: .
+    environment:
+      <<: *databases
+      OPERATOR_KEY: ${OPERATOR_KEY}
+      READER_KEY: ${READER_KEY}
+      UPLAND_KEY: ${UPLAND_KEY}
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on: {setup: {condition: service_completed_successfully}}
+  worker:
+    build: .
+    environment: *databases
+    command: ["node","src/worker.js"]
+    depends_on: {setup: {condition: service_completed_successfully}}
+  checks:
+    profiles: [test]
+    build: {context: ., target: checks}
+    environment: *databases
+    depends_on: {setup: {condition: service_completed_successfully}}
+volumes:
+  source-data:
+  index-data:
